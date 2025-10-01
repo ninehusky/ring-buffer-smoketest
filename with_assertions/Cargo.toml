@@ -1,0 +1,10 @@
+[package]
+name = "ring-buffer-smoketest"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+flux-rs = { git  = "https://github.com/flux-rs/flux.git" }
+
+[package.metadata.flux]
+enabled = true
