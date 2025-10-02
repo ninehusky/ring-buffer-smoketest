@@ -44,6 +44,7 @@ flux_rs::defs! {
 
 impl<'a, T: Copy> RingBuffer<'a, T> {
     #[flux_rs::sig(fn({&mut [T][@ring_len] | ring_len > 1}) -> RingBuffer<T>[ring_len, 0, 0])]
+    #[inline(never)]
     pub fn new(ring: &'a mut [T]) -> RingBuffer<'a, T> {
         RingBuffer {
             head: 0,
@@ -53,6 +54,7 @@ impl<'a, T: Copy> RingBuffer<'a, T> {
     }
 
     /// Returns the number of elements that can be enqueued until the ring buffer is full.
+    #[inline(never)]
     pub fn available_len(&self) -> usize {
         // The maximum capacity of the queue is ring.len - 1, because head == tail for the empty
         // queue.
@@ -69,6 +71,7 @@ impl<'a, T: Copy> RingBuffer<'a, T> {
     /// - `(Some(left), Some(right))` if the head is after the tail. In that case, the logical
     /// contents of the buffer is `[left, right].concat()` (although physically the "left" slice is
     /// stored after the "right" slice).
+    #[inline(never)]
     pub fn as_slices(&'a self) -> (Option<&'a [T]>, Option<&'a [T]>) {
         assert_invariants!(self);
         if self.head < self.tail {
@@ -91,18 +94,21 @@ impl<'a, T: Copy> RingBuffer<'a, T> {
 
 impl<T: Copy> queue::Queue<T> for RingBuffer<'_, T> {
     #[flux_rs::sig(fn(&RingBuffer<T>[@rb]) -> bool[!empty(rb)]) ]
+    #[inline(never)]
     fn has_elements(&self) -> bool {
         assert_invariants!(self);
         self.head != self.tail
     }
 
     #[flux_rs::sig(fn(&RingBuffer<T>[@rb]) -> bool[full(rb)]) ]
+    #[inline(never)]
     fn is_full(&self) -> bool {
         assert_invariants!(self);
         self.head == ((self.tail + 1) % self.ring.len())
     }
 
     #[flux_rs::sig(fn(&RingBuffer<T>[@rb]) -> usize{r: r < rb.ring_len}) ]
+    #[inline(never)]
     fn len(&self) -> usize {
         assert_invariants!(self);
         if self.tail > self.head {
@@ -125,6 +131,7 @@ impl<T: Copy> queue::Queue<T> for RingBuffer<'_, T> {
                 (!full(old) => new.tl == next_tl(old) && new.hd == old.hd)
             }
     )]
+    #[inline(never)]
     fn enqueue(&mut self, val: T) -> bool {
         assert_invariants!(self);
         if self.is_full() {
@@ -147,6 +154,7 @@ impl<T: Copy> queue::Queue<T> for RingBuffer<'_, T> {
                 (!full(old) => (new.tl == next_tl(old) && new.hd == old.hd))
             }
     )]
+    #[inline(never)]
     fn push(&mut self, val: T) -> Option<T> {
         assert_invariants!(self);
         let result = if self.is_full() {
@@ -170,6 +178,7 @@ impl<T: Copy> queue::Queue<T> for RingBuffer<'_, T> {
                 (!empty(old) => new.hd == next_hd(old))
              }
     )]
+    #[inline(never)]
     fn dequeue(&mut self) -> Option<T> {
         assert_invariants!(self);
         if self.has_elements() {
@@ -191,6 +200,7 @@ impl<T: Copy> queue::Queue<T> for RingBuffer<'_, T> {
     #[flux_rs::sig(
         fn(self: &strg Self, _) -> Option<_> ensures self: Self
     )]
+    #[inline(never)]
     fn remove_first_matching<F>(&mut self, f: F) -> Option<T>
     where
         F: Fn(&T) -> bool,
@@ -221,6 +231,7 @@ impl<T: Copy> queue::Queue<T> for RingBuffer<'_, T> {
     #[flux_rs::sig(
         fn(self: &strg RingBuffer<T>[@old]) ensures self: RingBuffer<T>[old.ring_len, 0, 0]
     )]
+    #[inline(never)]
     fn empty(&mut self) {
         assert_invariants!(self);
         self.head = 0;
@@ -230,6 +241,7 @@ impl<T: Copy> queue::Queue<T> for RingBuffer<'_, T> {
     #[flux_rs::sig(
         fn(self: &strg RingBuffer<T>, _) ensures self: RingBuffer<T>
     )]
+    #[inline(never)]
     fn retain<F>(&mut self, mut f: F)
     where
         F: FnMut(&T) -> bool,
