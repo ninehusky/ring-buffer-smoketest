@@ -11,6 +11,7 @@ def get_rlib_size(rlib_path):
     subprocess.run(['ls', '-lh', rlib_path])
 
 def compile_project(project_path):
+    subprocess.run(['cargo', 'clean'], cwd=project_path)
     subprocess.run(['cargo', 'build', '--release'], cwd=project_path)
 
 if __name__ == '__main__':
