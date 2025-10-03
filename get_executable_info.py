@@ -3,6 +3,22 @@ import subprocess
 import sys
 import re
 
+try:
+    from rust_demangler import demangle as rust_demangle
+except ImportError:
+    # fallback if rust_demangler not installed
+    def rust_demangle(name: str) -> str:
+        try:
+            # use external `rustfilt` if available
+            result = subprocess.run(["rustfilt"], input=name, capture_output=True, text=True)
+            if result.returncode == 0:
+                # return everything after the last ::
+                return result.stdout.strip().split("::")[-1]
+        except FileNotFoundError:
+            pass
+        return name  # fallback to raw name
+
+
 def get_function_sizes(binary):
     result = subprocess.run(["otool", "-tV", binary], capture_output=True, text=True)
     lines = result.stdout.splitlines()
@@ -36,6 +52,7 @@ def get_function_sizes(binary):
 
     return sizes
 
+
 if len(sys.argv) != 3:
     print("Usage: python compare_funcs.py <with_assertions_bin> <without_assertions_bin>")
     sys.exit(1)
@@ -48,8 +65,23 @@ without_sizes = get_function_sizes(without_bin)
 
 all_funcs = set(with_sizes.keys()) | set(without_sizes.keys())
 
+total_with = 0
+total_without = 0
+
+print(f"{'Function':40} {'With (bytes)':>15} {'Without (bytes)':>15} {'Δ (bytes)':>10}")
+print("-" * 85)
+
 for fn in sorted(all_funcs):
     w = with_sizes.get(fn, 0)
     wo = without_sizes.get(fn, 0)
     if "ring_buffer" in fn:
-        print(f"{fn}: with={w} bytes, without={wo} bytes (delta = {w-wo})")
+        demangled = rust_demangle(fn)
+        if demangled == "main":
+            continue
+        delta = w - wo
+        total_with += w
+        total_without += wo
+        print(f"{demangled:40} {w:15} {wo:15} {delta:10}")
+
+print("-" * 85)
+print(f"{'TOTAL':40} {total_with:15} {total_without:15} {total_with - total_without:10}")
