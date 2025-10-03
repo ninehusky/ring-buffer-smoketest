@@ -56,7 +56,6 @@ harness_fn!(call_empty, |buf: &mut RingBuffer<i32>| {
     buf.empty();
 });
 
-#[inline(never)]
 fn main() {
     const LEN: usize = 5;
     let mut storage = [0; LEN];
