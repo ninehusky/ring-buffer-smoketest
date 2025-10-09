@@ -31,7 +31,6 @@ def compile_project(project_path):
 
 
 def get_functions_with_asm(binary):
-    """Return {fn_name: {"size": int, "asm": [lines]}} from otool output."""
     result = subprocess.run(["otool", "-tV", binary], capture_output=True, text=True)
     lines = result.stdout.splitlines()
 

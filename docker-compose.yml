@@ -1,0 +1,13 @@
+services:
+  rust-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/app
+      - cargo-cache:/root/.cargo/registry
+      - target-cache:/app/target
+
+volumes:
+  cargo-cache:
+  target-cache:
