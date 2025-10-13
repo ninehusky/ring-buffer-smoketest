@@ -1,13 +1,24 @@
+version: '3.9'
+
 services:
   rust-app:
     build:
       context: .
       dockerfile: Dockerfile
     volumes:
-      - .:/app
-      - cargo-cache:/root/.cargo/registry
-      - target-cache:/app/target
+      - .:/app                               # Project source (live edits)
+      - cargo-registry:/root/.cargo/registry # Container-local Cargo registry
+      - cargo-git:/root/.cargo/git           # Container-local Cargo git cache
+      - xargo:/root/.xargo                   # Container-local Xargo cache
+      - /var/run/docker.sock:/var/run/docker.sock # Needed for cross
+    working_dir: /app
+    environment:
+      - CARGO_HOME=/root/.cargo
+      - RUSTUP_HOME=/root/.rustup
+      - CROSS_CONTAINER_IN_CONTAINER=true
+    command: bash
 
 volumes:
-  cargo-cache:
-  target-cache:
+  cargo-registry:
+  cargo-git:
+  xargo:
