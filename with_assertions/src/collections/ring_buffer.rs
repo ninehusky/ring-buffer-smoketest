@@ -4,8 +4,12 @@
 
 //! Implementation of a ring buffer.
 
+
 use crate::collections::queue;
-use std::hint::assert_unchecked;
+use core::hint::assert_unchecked;
+use core::option::{Option, Option::{None, Some}};
+use core::ops::{Fn, FnMut};
+use core::marker::Copy;
 
 macro_rules! assert_invariants {
     ($self:ident) => {

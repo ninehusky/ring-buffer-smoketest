@@ -1,3 +1,4 @@
+#![no_std]
 use flux_rs::attrs::*;
 
 pub mod collections;

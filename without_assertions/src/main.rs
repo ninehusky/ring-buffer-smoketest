@@ -1,10 +1,21 @@
+#![no_std]
+#![no_main]
+
 use ring_buffer_smoketest::collections::queue::Queue;
 use ring_buffer_smoketest::collections::ring_buffer::RingBuffer;
-use std::hint::black_box;
+use core::hint::black_box;
+use core::panic::PanicInfo;
+
+// This function is called on panic
+#[panic_handler]
+fn panic(_info: &PanicInfo) -> ! {
+    loop {}
+}
 
 macro_rules! harness_fn {
     ($name:ident, $body:expr) => {
-        fn $name(buf: &mut RingBuffer<i32>) {
+        #[no_mangle]
+        pub fn $name(buf: &mut RingBuffer<i32>) {
             $body(buf);
         }
     };
@@ -56,7 +67,14 @@ harness_fn!(call_empty, |buf: &mut RingBuffer<i32>| {
     buf.empty();
 });
 
-fn main() {
+// A simple function that just returns 3
+#[no_mangle]
+pub extern "C" fn foo() -> i32 {
+    3
+}
+
+#[no_mangle]
+pub extern "C" fn main() -> !{
     const LEN: usize = 5;
     let mut storage = [0; LEN];
     let mut buf = RingBuffer::new(&mut storage);
@@ -72,6 +90,36 @@ fn main() {
     call_remove_first_matching(&mut buf);
     call_retain(&mut buf);
     call_empty(&mut buf);
-
-    println!("Harness executed all RingBuffer functions at least once.");
+    loop {}
 }
+
+
+#[link(name="c")]
+extern "C" {
+}
+
+#[no_mangle]
+pub static TEST_FUNCS: [fn(&mut RingBuffer<i32>); 11] = [
+    call_available_len,
+    call_as_slices,
+    call_has_elements,
+    call_is_full,
+    call_len,
+    call_enqueue,
+    call_dequeue,
+    call_push,
+    call_remove_first_matching,
+    call_retain,
+    call_empty,
+];
+
+#[no_mangle]
+pub extern "C" fn _start() -> ! {
+    main();
+}
+
+// For arm to not complain
+#[no_mangle]
+pub extern "C" fn __aeabi_unwind_cpp_pr0() {}
+#[no_mangle]
+pub extern "C" fn __aeabi_unwind_cpp_pr1() {}

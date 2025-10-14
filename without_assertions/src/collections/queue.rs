@@ -3,6 +3,8 @@
 // Copyright Tock Contributors 2022.
 
 //! Interface for queue structure.
+use core::option::{Option, Option::{None, Some}};
+use core::ops::{Fn, FnMut};
 
 pub trait Queue<T> {
     /// Returns true if there are any items in the queue, false otherwise.
