@@ -22,25 +22,67 @@ See this repository's Dockerfile for an example of how to set this up.
 """
 import subprocess
 import re
+import os
 import rust_demangler
 WITH_ASSERTIONS_DIR = "../with_assertions"
 WITHOUT_ASSERTIONS_DIR = "../without_assertions"
 BINARY_NAME = "ring-buffer-smoketest"
 OUT_DIR = "../out"
+
+
 # x86_64, riscv64, arm64.
+
 ARCHITECTURES = {
-    "i686-unknown-linux-gnu",
-    "armv7-unknown-linux-gnueabihf",
-    "riscv32i-unknown-none-elf",
+    "x86": {
+        "target": "i686-unknown-linux-gnu",
+    },
+    "arm": {
+        "target": "armv7-unknown-linux-gnueabihf",
+    },
+    "riscv": {
+        "target": "riscv32imac-unknown-none-elf",
+    },
 }
 
 def rust_demangle(name: str) -> str:
     return rust_demangler.demangle(name)
 
 
+def clean_project(project_path: str):
+    clean_proc = subprocess.run(
+        ['cargo', 'clean'],
+        cwd=project_path,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    if clean_proc.returncode != 0:
+        print(f"[cargo clean] failed for {project_path}:\n{clean_proc.stderr}")
+        raise RuntimeError(f"cargo clean failed for {project_path}")
+
 def compile_project(project_path: str, arch: str):
-    subprocess.run(['cargo', 'clean'], cwd=project_path)
-    subprocess.run(['cargo', 'build', '--release', '--target',  f'{arch}'], cwd=project_path)
+    # Build step
+    env = os.environ.copy()
+    env["RUSTFLAGS"] = "-C link-arg=-nostdlib"
+    build_proc = subprocess.run(
+        [
+            "cargo",
+            "build",
+            "--release",
+            "--target",
+            arch,
+        ],
+        cwd=project_path,
+        env=env,
+        check=False,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    if build_proc.returncode != 0:
+        print(f"[cargo build] failed for {project_path} ({arch}):\n{build_proc.stderr}")
+        raise RuntimeError(f"cargo build failed for {project_path} ({arch})")
+
 
 
 def get_functions_with_asm(binary):
@@ -89,11 +131,16 @@ def get_functions_with_asm(binary):
 
 
 if __name__ == "__main__":
+    # Clean both projects once at the start
+    clean_project(WITH_ASSERTIONS_DIR)
+    clean_project(WITHOUT_ASSERTIONS_DIR)
+
     # Compile both projects
-    for arch in ARCHITECTURES:
-        print(f"Compiling for architecture: {arch}")
-        compile_project(WITH_ASSERTIONS_DIR, arch)
-        compile_project(WITHOUT_ASSERTIONS_DIR, arch)
+    for arch_name, arch_info in ARCHITECTURES.items():
+        print(f"Compiling for architecture: {arch_name}")
+        compile_project(WITH_ASSERTIONS_DIR, arch_info["target"])
+        compile_project(WITHOUT_ASSERTIONS_DIR, arch_info["target"])
+        print(f"Done compiling for {arch_name}!")
 
     # # Paths to binaries
     # with_bin = f"{WITH_ASSERTIONS_DIR}/target/release/{BINARY_NAME}"
