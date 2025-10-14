@@ -26,10 +26,11 @@ import os
 import csv
 from typing import Optional, List, Dict
 
-WITH_ASSERTIONS_DIR = "../with_assertions"
-WITHOUT_ASSERTIONS_DIR = "../without_assertions"
+WITH_ASSERTIONS_DIR = "with_assertions"
+WITHOUT_ASSERTIONS_DIR = "without_assertions"
 BINARY_NAME = "ring-buffer-smoketest"
-OUT_DIR = "../out"
+OUT_DIR = "out"
+DISASM_OUT_DIR = os.path.join(OUT_DIR, "disasm")
 
 EXPECTED_FUNCTIONS = [
     "available_len",
@@ -181,6 +182,11 @@ def get_functions_with_asm(binary: str) -> Dict[str, Dict[str, object]]:
 
 
 if __name__ == "__main__":
+    # "cd" to the ROOT_DIR in the environment.
+    assert "ROOT_DIR" in os.environ, "ROOT_DIR environment variable not set"
+
+    os.chdir(os.environ["ROOT_DIR"])
+
     # Clean both projects once at the start
     clean_project(WITH_ASSERTIONS_DIR)
     clean_project(WITHOUT_ASSERTIONS_DIR)
@@ -229,6 +235,20 @@ if __name__ == "__main__":
                 size_without = without_sizes.get(fn, {}).get("size", 0)
                 delta = size_with - size_without
                 all_func_rows.append([fn, arch_name, size_with, size_without, delta])
+
+                for which, sizes in [("with", with_sizes), ("without", without_sizes)]:
+                    if fn in sizes:
+                        asm = sizes[fn].get("asm", "")
+                        if asm:
+                            # Directory: out/disasm/{function}
+                            func_dir = os.path.join(DISASM_OUT_DIR, fn)
+                            os.makedirs(func_dir, exist_ok=True)
+                            # File: out/disasm/{function}/{arch}-{function}.asm
+                            # Optionally, add -with or -without to the filename for clarity
+                            filename = f"{arch_name}-{fn}-{which}.asm"
+                            file_path = os.path.join(func_dir, filename)
+                            with open(file_path, "w") as f:
+                                f.write(asm)
 
         # Sort by function name, then architecture
         all_func_rows.sort(key=lambda row: (row[0], row[1]))

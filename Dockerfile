@@ -30,6 +30,8 @@ ENV PATH="/opt/riscv/xpack-riscv-none-elf-gcc-14.2.0-3/bin:${PATH}"
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs/ | sh -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"
 
+ENV ROOT_DIR=/app
+
 # Set working directory
 WORKDIR /app
 
