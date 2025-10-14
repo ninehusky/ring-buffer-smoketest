@@ -11,21 +11,6 @@ use core::option::{Option, Option::{None, Some}};
 use core::ops::{Fn, FnMut};
 use core::marker::Copy;
 
-// This doesn't exist here!
-// macro_rules! assert_invariants {
-//     ($self:ident) => {
-//         let ring_len = $self.ring.len();
-//         let head = $self.head;
-//         let tail = $self.tail;
-
-//         unsafe {
-//             assert_unchecked(ring_len > 1);
-//             assert_unchecked(head < ring_len);
-//             assert_unchecked(tail < ring_len);
-//         }
-//     };
-// }
-
 #[flux_rs::refined_by(ring_len: int, hd: int, tl: int)]
 #[flux_rs::invariant(ring_len > 1)]
 #[flux_rs::invariant(hd < ring_len)]
