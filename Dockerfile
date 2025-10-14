@@ -40,6 +40,9 @@ RUN rustup target add i686-unknown-linux-gnu \
     && rustup target add armv7-unknown-linux-gnueabihf \
     && rustup target add riscv32imac-unknown-none-elf
 
+# Install rustfilt for Rust symbol demangling
+RUN cargo install rustfilt
+
 RUN pip3 install --break-system-packages -r python/requirements.txt
 
 
