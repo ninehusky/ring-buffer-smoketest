@@ -9,7 +9,7 @@ extracts function sizes for ring buffer related functions, and outputs:
 - The disassembly of each function in both builds
 
 This compiles the projects on three architectures: x86, riscv32, and arm32.
-In `rustup` world, these are `i686-unknown-linux-gnu`, `riscv32i-unknown-none-elf`,
+In `rustup` world, these are `i686-unknown-linux-gnu`, `riscv32imac-unknown-none-elf`,
 and `armv7-unknown-linux-gnueabihf`.
 
 We assume you have the relevant cross-compilation toolchains installed, e.g.
