@@ -11,8 +11,21 @@ RUN apt-get update && \
         gcc-i686-linux-gnu \
         g++-i686-linux-gnu \
         gcc-arm-linux-gnueabihf \
+        g++-arm-linux-gnueabihf \
+        libc6-dev-armhf-cross \
+        libstdc++-13-dev-armhf-cross \
+        linux-libc-dev-armhf-cross \
         docker.io \
     && rm -rf /var/lib/apt/lists/*
+
+# Download and install xPack RISC-V GCC toolchain
+RUN mkdir -p /opt/riscv && \
+    curl -LO https://github.com/xpack-dev-tools/riscv-none-elf-gcc-xpack/releases/download/v14.2.0-3/xpack-riscv-none-elf-gcc-14.2.0-3-linux-x64.tar.gz && \
+    tar -xzf xpack-riscv-none-elf-gcc-14.2.0-3-linux-x64.tar.gz -C /opt/riscv && \
+    rm xpack-riscv-none-elf-gcc-14.2.0-3-linux-x64.tar.gz
+
+ENV PATH="/opt/riscv/xpack-riscv-none-elf-gcc-14.2.0-3/bin:${PATH}"
+
 # Install Rust
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs/ | sh -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"
@@ -25,16 +38,10 @@ COPY . .
 # Add Rust targets for cross-compilation
 RUN rustup target add i686-unknown-linux-gnu \
     && rustup target add armv7-unknown-linux-gnueabihf \
-    && rustup target add riscv32i-unknown-none-elf
-
-# Install cross
-RUN cargo install cross --git https://github.com/cross-rs/cross
+    && rustup target add riscv32imac-unknown-none-elf
 
 RUN pip3 install --break-system-packages -r python/requirements.txt
 
-
-# Make build script executable and run it
-# RUN chmod +x build.sh && ./build.sh --release
 
 # Set the default command
 CMD ["bash"]
