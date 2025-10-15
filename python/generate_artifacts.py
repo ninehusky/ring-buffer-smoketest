@@ -7,6 +7,7 @@ extracts function sizes for ring buffer related functions, and outputs:
 - The total ELF size for the test harness
 - The size of each function in both builds
 - The disassembly of each function in both builds
+- LLVM IR for the test harness (architecture-independent)
 
 This compiles the projects on three architectures: x86, riscv32, and arm32.
 In `rustup` world, these are `i686-unknown-linux-gnu`, `riscv32imac-unknown-none-elf`,
@@ -31,6 +32,7 @@ WITHOUT_ASSERTIONS_DIR = "without_assertions"
 BINARY_NAME = "ring-buffer-smoketest"
 OUT_DIR = "out"
 DISASM_OUT_DIR = os.path.join(OUT_DIR, "disasm")
+LLVM_IR_OUT_DIR = os.path.join(OUT_DIR, "llvm-ir")
 
 EXPECTED_FUNCTIONS = [
     "available_len",
@@ -127,6 +129,57 @@ def compile_project(project_path: str, arch: str):
         print(f"[cargo build] failed for {project_path} ({arch}):\n{build_proc.stderr}")
         raise RuntimeError(f"cargo build failed for {project_path} ({arch})")
 
+def compile_project_with_llvm_ir(project_path: str, arch: str):
+    """Compile project with LLVM IR emission enabled."""
+    env = os.environ.copy()
+    env["RUSTFLAGS"] = "-C link-arg=-nostdlib --emit=link,llvm-ir"
+    build_proc = subprocess.run(
+        [
+            "cargo",
+            "build",
+            "--release",
+            "--target",
+            arch,
+        ],
+        cwd=project_path,
+        env=env,
+        check=False,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    if build_proc.returncode != 0:
+        print(f"[cargo build with LLVM IR] failed for {project_path} ({arch}):\n{build_proc.stderr}")
+        raise RuntimeError(f"cargo build with LLVM IR failed for {project_path} ({arch})")
+
+def copy_llvm_ir_files(project_path: str, arch: str, project_type: str):
+    """Copy LLVM IR files from target directory to output directory."""
+    # LLVM IR files are generated in target/{arch}/release/deps/ directory
+    deps_dir = os.path.join(project_path, "target", arch, "release", "deps")
+    
+    if not os.path.exists(deps_dir):
+        print(f"Warning: deps directory not found: {deps_dir}")
+        return
+    
+    # Create output directory for this project type
+    output_dir = os.path.join(LLVM_IR_OUT_DIR, project_type)
+    os.makedirs(output_dir, exist_ok=True)
+    
+    # Find and copy all .ll files
+    ll_files = []
+    for file in os.listdir(deps_dir):
+        if file.endswith(".ll"):
+            ll_files.append(file)
+            src_path = os.path.join(deps_dir, file)
+            dst_path = os.path.join(output_dir, file)
+            with open(src_path, 'r') as src, open(dst_path, 'w') as dst:
+                dst.write(src.read())
+    
+    if ll_files:
+        print(f"  Copied {len(ll_files)} LLVM IR file(s) from {project_type}")
+    else:
+        print(f"  Warning: No LLVM IR files found in {deps_dir}")
+
 def add_function_entry(functions: Dict[str, Dict[str, object]], current_fn: Optional[str], start_addr: Optional[int], last_addr: Optional[int], asm_lines: List[str]):
     if current_fn is not None and start_addr is not None and last_addr is not None:
         size = last_addr - start_addr + 1
@@ -195,6 +248,20 @@ if __name__ == "__main__":
     os.makedirs(OUT_DIR, exist_ok=True)
     per_function_csv = os.path.join(OUT_DIR, "function_sizes.csv")
     elf_size_csv = os.path.join(OUT_DIR, "elf_sizes.csv")
+
+    # Generate LLVM IR artifacts (architecture-independent, so only generate once)
+    print("Generating LLVM IR artifacts...")
+    # Use the first architecture for LLVM IR generation
+    first_arch = list(ARCHITECTURES.values())[0]["target"]
+    compile_project_with_llvm_ir(WITH_ASSERTIONS_DIR, first_arch)
+    copy_llvm_ir_files(WITH_ASSERTIONS_DIR, first_arch, "with_assertions")
+    compile_project_with_llvm_ir(WITHOUT_ASSERTIONS_DIR, first_arch)
+    copy_llvm_ir_files(WITHOUT_ASSERTIONS_DIR, first_arch, "without_assertions")
+    print("Done generating LLVM IR artifacts!")
+    
+    # Clean after LLVM IR generation to prepare for regular builds
+    clean_project(WITH_ASSERTIONS_DIR)
+    clean_project(WITHOUT_ASSERTIONS_DIR)
 
     with open(per_function_csv, "w", newline="") as func_csv, open(elf_size_csv, "w", newline="") as elf_csv:
         func_writer = csv.writer(func_csv)
