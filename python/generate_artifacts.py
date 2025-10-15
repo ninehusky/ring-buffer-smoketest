@@ -132,14 +132,19 @@ def compile_project(project_path: str, arch: str):
 def compile_project_with_llvm_ir(project_path: str, arch: str):
     """Compile project with LLVM IR emission enabled."""
     env = os.environ.copy()
-    env["RUSTFLAGS"] = "-C link-arg=-nostdlib --emit=link,llvm-ir"
+    # Use RUSTFLAGS for link-arg and cargo rustc -- for emit
+    env["RUSTFLAGS"] = "-C link-arg=-nostdlib"
     build_proc = subprocess.run(
         [
             "cargo",
-            "build",
+            "rustc",
             "--release",
             "--target",
             arch,
+            "--bin",
+            BINARY_NAME,
+            "--",
+            "--emit=link,llvm-ir",
         ],
         cwd=project_path,
         env=env,
