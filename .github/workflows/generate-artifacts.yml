@@ -1,0 +1,37 @@
+name: Generate Artifacts
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  generate-and-upload:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Build Docker image
+        run: docker build -t ring-buffer-smoketest .
+      
+      - name: Run Python script in Docker and extract artifacts
+        run: |
+          # Create a container, run the script, and copy out the artifacts
+          CONTAINER_ID=$(docker create ring-buffer-smoketest python3 python/generate_artifacts.py)
+          docker start -a $CONTAINER_ID
+          docker cp $CONTAINER_ID:/app/out ./out
+          docker rm $CONTAINER_ID
+      
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ring-buffer-artifacts
+          path: out/
+          if-no-files-found: error
