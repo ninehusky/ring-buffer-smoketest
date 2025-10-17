@@ -9,7 +9,7 @@ extracts function sizes for ring buffer related functions, and outputs:
 - The disassembly of each function in both builds
 
 This compiles the projects on three architectures: x86, riscv32, and arm32.
-In `rustup` world, these are `i686-unknown-linux-gnu`, `riscv32imac-unknown-none-elf`,
+In `rustup` world, these are `i686-unknown-linux-gnu`, `riscv32i-unknown-none-elf`,
 and `armv7-unknown-linux-gnueabihf`.
 
 We assume you have the relevant cross-compilation toolchains installed, e.g.
@@ -132,7 +132,9 @@ def add_function_entry(functions: Dict[str, Dict[str, object]], current_fn: Opti
         size = last_addr - start_addr + 1
         demangled = rust_demangle(current_fn)
         short_name = simple_fn_name(demangled)
-        if short_name not in EXPECTED_FUNCTIONS:
+        # We want to bail early if:
+        # 1. The function is not in EXPECTED_FUNCTIONS AND the function does not have the word "call" in it.
+        if short_name not in EXPECTED_FUNCTIONS and "call" not in demangled:
             return
         functions[short_name] = {
             "size": size,
