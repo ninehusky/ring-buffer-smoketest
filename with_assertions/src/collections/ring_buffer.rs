@@ -222,6 +222,7 @@ impl<T: Copy> queue::Queue<T> for RingBuffer<'_, T> {
                 while next_slot != self.tail {
                     self.ring[slot] = self.ring[next_slot];
                     slot = next_slot;
+                    assert_invariants!(self);
                     next_slot = (next_slot + 1) % len;
                 }
                 self.tail = slot;
