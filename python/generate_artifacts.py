@@ -31,6 +31,7 @@ WITHOUT_ASSERTIONS_DIR = "without_assertions"
 BINARY_NAME = "ring-buffer-smoketest"
 OUT_DIR = "out"
 DISASM_OUT_DIR = os.path.join(OUT_DIR, "disasm")
+DISASM_FULL_OUT_DIR = os.path.join(OUT_DIR, "disasm", "full")
 
 EXPECTED_FUNCTIONS = [
     "available_len",
@@ -141,6 +142,17 @@ def add_function_entry(functions: Dict[str, Dict[str, object]], current_fn: Opti
             "asm": "\n".join(asm_lines),
         }
 
+def get_full_disassembly(binary: str) -> str:
+    """
+    Get the full disassembly of a binary using llvm-objdump.
+    """
+    result = subprocess.run(["llvm-objdump", "-D", binary],
+                            capture_output=True, text=True)
+    if result.returncode != 0:
+        print("llvm-objdump failed:", result.stderr)
+        return ""
+    return result.stdout
+
 def get_functions_with_asm(binary: str) -> Dict[str, Dict[str, object]]:
     result = subprocess.run(["llvm-objdump", "-D", binary],
                             capture_output=True, text=True)
@@ -195,6 +207,7 @@ if __name__ == "__main__":
 
     # Prepare CSV writers
     os.makedirs(OUT_DIR, exist_ok=True)
+    os.makedirs(DISASM_FULL_OUT_DIR, exist_ok=True)
     per_function_csv = os.path.join(OUT_DIR, "function_sizes.csv")
     elf_size_csv = os.path.join(OUT_DIR, "elf_sizes.csv")
 
@@ -214,6 +227,14 @@ if __name__ == "__main__":
             # Get ELF sizes
             with_bin = f"{WITH_ASSERTIONS_DIR}/target/{arch_info['target']}/release/{BINARY_NAME}"
             without_bin = f"{WITHOUT_ASSERTIONS_DIR}/target/{arch_info['target']}/release/{BINARY_NAME}"
+
+            # Generate full disassembly for this architecture
+            full_disasm = get_full_disassembly(with_bin)
+            if full_disasm:
+                full_disasm_file = os.path.join(DISASM_FULL_OUT_DIR, f"{arch_name}-disasm.asm")
+                with open(full_disasm_file, "w") as f:
+                    f.write(full_disasm)
+                print(f"Generated full disassembly for {arch_name}: {full_disasm_file}")
 
             # Get file sizes
             try:
