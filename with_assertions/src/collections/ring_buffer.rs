@@ -252,10 +252,6 @@ impl<T: Copy> queue::Queue<T> for RingBuffer<'_, T> {
         F: FnMut(&T) -> bool,
     {
         let len = self.ring.len();
-        unsafe {
-            // Tell LLVM/Rust that len > 0 for the rest of the function.
-            assert_unchecked(len > 0);
-        }
         assert_invariants!(self);
         // Index over the elements before the retain operation.
         let mut src = self.head;
