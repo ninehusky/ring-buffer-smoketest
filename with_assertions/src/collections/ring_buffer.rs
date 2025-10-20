@@ -251,8 +251,12 @@ impl<T: Copy> queue::Queue<T> for RingBuffer<'_, T> {
     where
         F: FnMut(&T) -> bool,
     {
-        assert_invariants!(self);
         let len = self.ring.len();
+        unsafe {
+            // Tell LLVM/Rust that len > 0 for the rest of the function.
+            assert_unchecked(len > 0);
+        }
+        assert_invariants!(self);
         // Index over the elements before the retain operation.
         let mut src = self.head;
         // Index over the retained elements.
@@ -263,6 +267,11 @@ impl<T: Copy> queue::Queue<T> for RingBuffer<'_, T> {
                 // When the predicate is true, move the current element to the
                 // destination if needed, and increment the destination index.
                 if src != dst {
+                    unsafe {
+                        // Key assertion: dst is always valid because dst ≤ src
+                        // and src is always valid (it's between head and tail)
+                        assert_unchecked(dst < len);
+                    }
                     self.ring[dst] = self.ring[src];
                 }
                 dst = (dst + 1) % len;
