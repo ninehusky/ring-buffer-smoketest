@@ -6,7 +6,6 @@
 
 
 use crate::collections::queue;
-use core::hint::assert_unchecked;
 use core::option::{Option, Option::{None, Some}};
 use core::ops::{Fn, FnMut};
 use core::marker::Copy;
@@ -17,11 +16,9 @@ macro_rules! assert_invariants {
         let head = $self.head;
         let tail = $self.tail;
 
-        unsafe {
-            assert_unchecked(ring_len > 1);
-            assert_unchecked(head < ring_len);
-            assert_unchecked(tail < ring_len);
-        }
+        flux_rs::assert(ring_len > 1);
+        flux_rs::assert(head < ring_len);
+        flux_rs::assert(tail < ring_len);
     };
 }
 
