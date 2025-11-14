@@ -1,0 +1,13 @@
+[package]
+name = "flux_support"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+
+[package.metadata.flux]
+enabled = true
+check_overflow = "lazy"
+
+[dependencies]
+tock-registers = { path = "../libraries/tock-register-interface" }
+flux-rs = { git  = "https://github.com/flux-rs/flux.git" }
