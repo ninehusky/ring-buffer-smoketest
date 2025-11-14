@@ -57,6 +57,11 @@ impl<'a, T: Copy> RingBuffer<'a, T> {
         }
     }
 
+    #[inline(never)]
+    pub fn my_panic() {
+        panic!("This function always panics");
+    }
+
     /// Returns the number of elements that can be enqueued until the ring buffer is full.
     #[inline(never)]
     pub fn available_len(&self) -> usize {

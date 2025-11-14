@@ -1,5 +1,6 @@
 #![no_std]
-use flux_rs::attrs::*;
+// use flux_rs::attrs::*;
+extern crate flux_core;
 
 pub mod collections;
 

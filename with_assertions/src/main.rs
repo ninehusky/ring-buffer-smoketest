@@ -5,6 +5,7 @@ use ring_buffer_smoketest::collections::queue::Queue;
 use ring_buffer_smoketest::collections::ring_buffer::RingBuffer;
 use core::hint::black_box;
 use core::panic::PanicInfo;
+extern crate flux_core;
 
 // This function is called on panic
 #[panic_handler]
@@ -22,6 +23,10 @@ macro_rules! harness_fn {
 }
 
 // Define all the wrappers
+harness_fn!(call_never_panic, |buf| {
+    black_box(RingBuffer::<i32>::my_panic());
+});
+
 harness_fn!(call_available_len, |buf: &mut RingBuffer<i32>| {
     black_box(buf.available_len());
 });
@@ -75,8 +80,7 @@ pub extern "C" fn foo() -> i32 {
 
 #[no_mangle]
 pub extern "C" fn main() -> !{
-    const LEN: usize = 5;
-    let mut storage = [0; LEN];
+    let mut storage = [0, 0, 0, 0, 0];
     let mut buf = RingBuffer::new(&mut storage);
 
     call_available_len(&mut buf);
@@ -90,6 +94,7 @@ pub extern "C" fn main() -> !{
     call_remove_first_matching(&mut buf);
     call_retain(&mut buf);
     call_empty(&mut buf);
+    call_never_panic(&mut buf);
     loop {}
 }
 
