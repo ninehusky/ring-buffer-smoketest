@@ -5,15 +5,21 @@ version = 4
 [[package]]
 name = "flux-attrs"
 version = "0.1.0"
-source = "git+https://github.com/flux-rs/flux.git#d1bcc3bb398ea44c942944eb866e24705461a4d4"
 dependencies = [
- "flux-attrs-impl",
+ "flux-attrs-impl 0.1.0",
+]
+
+[[package]]
+name = "flux-attrs"
+version = "0.1.0"
+source = "git+https://github.com/flux-rs/flux.git#75136083a46ac92a6556dd9e878ef0092575b969"
+dependencies = [
+ "flux-attrs-impl 0.1.0 (git+https://github.com/flux-rs/flux.git)",
 ]
 
 [[package]]
 name = "flux-attrs-impl"
 version = "0.1.0"
-source = "git+https://github.com/flux-rs/flux.git#d1bcc3bb398ea44c942944eb866e24705461a4d4"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -21,11 +27,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "flux-attrs-impl"
+version = "0.1.0"
+source = "git+https://github.com/flux-rs/flux.git#75136083a46ac92a6556dd9e878ef0092575b969"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "flux-core"
+version = "0.1.0"
+dependencies = [
+ "flux-attrs 0.1.0",
+]
+
+[[package]]
 name = "flux-rs"
 version = "0.1.0"
-source = "git+https://github.com/flux-rs/flux.git#d1bcc3bb398ea44c942944eb866e24705461a4d4"
+source = "git+https://github.com/flux-rs/flux.git#75136083a46ac92a6556dd9e878ef0092575b969"
 dependencies = [
- "flux-attrs",
+ "flux-attrs 0.1.0 (git+https://github.com/flux-rs/flux.git)",
 ]
 
 [[package]]
@@ -50,6 +73,7 @@ dependencies = [
 name = "ring-buffer-smoketest"
 version = "0.1.0"
 dependencies = [
+ "flux-core",
  "flux-rs",
 ]
 

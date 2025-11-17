@@ -6,8 +6,10 @@
 use core::option::{Option, Option::{None, Some}};
 use core::ops::{Fn, FnMut};
 
+
 pub trait Queue<T> {
     /// Returns true if there are any items in the queue, false otherwise.
+    #[flux_rs::no_panic]
     fn has_elements(&self) -> bool;
 
     /// Returns true if the queue is full, false otherwise.

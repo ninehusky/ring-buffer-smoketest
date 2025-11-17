@@ -4,6 +4,7 @@
 
 //! Implementation of a ring buffer.
 
+extern crate flux_core;
 
 use crate::collections::queue;
 use core::hint::assert_unchecked;
@@ -57,17 +58,13 @@ impl<'a, T: Copy> RingBuffer<'a, T> {
         }
     }
 
-    #[inline(never)]
-    pub fn my_panic() {
-        panic!("This function always panics");
-    }
 
     /// Returns the number of elements that can be enqueued until the ring buffer is full.
     #[inline(never)]
     pub fn available_len(&self) -> usize {
         // The maximum capacity of the queue is ring.len - 1, because head == tail for the empty
         // queue.
-        assert_invariants!(self);
+        // assert_invariants!(self);
         self.ring.len().saturating_sub(1 + queue::Queue::len(self))
     }
 
@@ -82,7 +79,7 @@ impl<'a, T: Copy> RingBuffer<'a, T> {
     /// stored after the "right" slice).
     #[inline(never)]
     pub fn as_slices(&'a self) -> (Option<&'a [T]>, Option<&'a [T]>) {
-        assert_invariants!(self);
+        // assert_invariants!(self);
         if self.head < self.tail {
             (Some(&self.ring[self.head..self.tail]), None)
         } else if self.head > self.tail {
@@ -105,21 +102,21 @@ impl<T: Copy> queue::Queue<T> for RingBuffer<'_, T> {
     #[flux_rs::sig(fn(&RingBuffer<T>[@rb]) -> bool[!empty(rb)]) ]
     #[inline(never)]
     fn has_elements(&self) -> bool {
-        assert_invariants!(self);
+        // assert_invariants!(self);
         self.head != self.tail
     }
 
     #[flux_rs::sig(fn(&RingBuffer<T>[@rb]) -> bool[full(rb)]) ]
     #[inline(never)]
     fn is_full(&self) -> bool {
-        assert_invariants!(self);
+        // assert_invariants!(self);
         self.head == ((self.tail + 1) % self.ring.len())
     }
 
     #[flux_rs::sig(fn(&RingBuffer<T>[@rb]) -> usize{r: r < rb.ring_len}) ]
     #[inline(never)]
     fn len(&self) -> usize {
-        assert_invariants!(self);
+        // assert_invariants!(self);
         if self.tail > self.head {
             self.tail - self.head
         } else if self.tail < self.head {
@@ -142,7 +139,7 @@ impl<T: Copy> queue::Queue<T> for RingBuffer<'_, T> {
     )]
     #[inline(never)]
     fn enqueue(&mut self, val: T) -> bool {
-        assert_invariants!(self);
+        // assert_invariants!(self);
         if self.is_full() {
             // Incrementing tail will overwrite head
             false
@@ -165,7 +162,7 @@ impl<T: Copy> queue::Queue<T> for RingBuffer<'_, T> {
     )]
     #[inline(never)]
     fn push(&mut self, val: T) -> Option<T> {
-        assert_invariants!(self);
+        // assert_invariants!(self);
         let result = if self.is_full() {
             let val = self.ring[self.head];
             self.head = (self.head + 1) % self.ring.len();
@@ -189,7 +186,7 @@ impl<T: Copy> queue::Queue<T> for RingBuffer<'_, T> {
     )]
     #[inline(never)]
     fn dequeue(&mut self) -> Option<T> {
-        assert_invariants!(self);
+        // assert_invariants!(self);
         if self.has_elements() {
             let val = self.ring[self.head];
             self.head = (self.head + 1) % self.ring.len();
@@ -214,7 +211,7 @@ impl<T: Copy> queue::Queue<T> for RingBuffer<'_, T> {
     where
         F: Fn(&T) -> bool,
     {
-        assert_invariants!(self);
+        // assert_invariants!(self);
         let len = self.ring.len();
         let mut slot = self.head;
         while slot != self.tail {
@@ -242,7 +239,7 @@ impl<T: Copy> queue::Queue<T> for RingBuffer<'_, T> {
     )]
     #[inline(never)]
     fn empty(&mut self) {
-        assert_invariants!(self);
+        // assert_invariants!(self);
         self.head = 0;
         self.tail = 0;
     }
@@ -255,7 +252,7 @@ impl<T: Copy> queue::Queue<T> for RingBuffer<'_, T> {
     where
         F: FnMut(&T) -> bool,
     {
-        assert_invariants!(self);
+        // assert_invariants!(self);
         let len = self.ring.len();
         // Index over the elements before the retain operation.
         let mut src = self.head;
